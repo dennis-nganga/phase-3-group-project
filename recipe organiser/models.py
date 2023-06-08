@@ -14,9 +14,9 @@ class Recipe(Base):
 
 class Ingredient(Base):
     __tablename__ = 'ingredients'
-
     id = Column(Integer, primary_key=True)
     name = Column(String)
-    amount = Column(String)
+    amount = Column(String)  # Add this line for the new column
     recipe_id = Column(Integer, ForeignKey('recipes.id'))
-    recipe_rel = relationship("Recipe", backref="recipe_ingredients")
+    recipe = relationship("Recipe", back_populates="ingredients")
+

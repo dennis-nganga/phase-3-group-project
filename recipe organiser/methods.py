@@ -12,8 +12,6 @@ def cli():
     pass
 
 @cli.command()
-
-@cli.command()
 def enter_ingredients():
     name = click.prompt("Enter your name")
     ingredients_input = click.prompt("Enter ingredients (comma-separated)")
