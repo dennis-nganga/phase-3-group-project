@@ -86,3 +86,4 @@ session = Session()
 
 # Create the base class for declarative models
 Base.metadata.create_all(engine)
+
