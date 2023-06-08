@@ -2,8 +2,18 @@ from sqlalchemy import Column, String, Integer, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
 
 Base = declarative_base()
+
+
+class Meal(Base):
+    __tablename__ = 'meals'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    # Add additional attributes as needed for the Meal class
+
 
 class HealthFact:
     def __init__(self, meal):
@@ -44,4 +54,36 @@ class HealthFact:
         for meal in meals:
             print(meal.name)
         self.session.close()
+
+
+class Ingredient(Base):
+    __tablename__ = 'ingredients'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    quantity = Column(String)
+    recipe_id = Column(Integer, ForeignKey('recipes.id'))
+
+    recipe = relationship("Recipe", backref="ingredients")
+
+    def __repr__(self):
+        return f'Ingredient: {self.name}'
+
+
+class Recipe(Base):
+    __tablename__ = 'recipes'
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    ingredients = relationship("Ingredient", backref="recipe")
+
+
+# Create the database engine
+engine = create_engine('sqlite:///recipes.db', echo=True)
+
+# Create a session factory
+Session = sessionmaker(bind=engine)
+session = Session()
+
+# Create the base class for declarative models
+Base.metadata.create_all(engine)
 
