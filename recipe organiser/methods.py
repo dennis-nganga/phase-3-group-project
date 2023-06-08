@@ -1,93 +1,73 @@
-from sqlalchemy import Column, String, Integer, ForeignKey
-from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
+import click
+import warnings
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine
+from database import Session
+from models import Recipe, Ingredient
 
-Base = declarative_base()
+# Suppress the warning
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
+@click.group()
+def cli():
+    pass
 
-class Meal(Base):
-    __tablename__ = 'meals'
+@cli.command()
+def greet():
+    name = click.prompt("Enter your name")
+    click.echo(f"Hello, {name}!")
 
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-    # Add additional attributes as needed for the Meal class
+@cli.command()
+def enter_ingredients():
+    name = click.prompt("Enter your name")
+    ingredients_input = click.prompt("Enter ingredients (comma-separated)")
+    ingredients_list = [ingredient.strip() for ingredient in ingredients_input.split(",")]
+    generate_recipes(name, ingredients_list)
 
-
-class HealthFact:
-    def __init__(self, meal):
-        self.meal = meal
-        self.engine = create_engine('sqlite:///meal_database.db')
-        Base.metadata.create_all(self.engine)
-        Session = sessionmaker(bind=self.engine)
-        self.session = Session()
-
-    def check_healthiness(self):
-        unhealthy_ingredients = ["fried", "processed", "sugary", "high-fat"]
-        unhealthy_count = 0
-
-        for ingredient in self.meal.recipe_ingredients:
-            for unhealthy in unhealthy_ingredients:
-                if unhealthy in ingredient.name:
-                    unhealthy_count += 1
-
-        if unhealthy_count > len(self.meal.recipe_ingredients) // 2:
-            return False
-        return True
-
-    def get_health_fact(self):
-        if self.check_healthiness():
-            return "This meal is healthy and nutritious!"
-        else:
-            return "Warning: This meal may not be healthy. Consider making healthier ingredient choices."
-
-    def save_meal_to_database(self):
-        meal = Meal(name=self.meal.name)
-        # Set other attributes of the meal object as needed
-        self.session.add(meal)
-        self.session.commit()
-        self.session.close()
-
-    def load_meals_from_database(self):
-        meals = self.session.query(Meal).all()
-        for meal in meals:
-            print(meal.name)
-        self.session.close()
+def generate_recipes(name, ingredients):
+    session = Session()
+    query = session.query(Recipe).join(Ingredient).filter(Ingredient.name.in_(ingredients)).all()
+    if query:
+        click.echo(f"Hello, {name}!")
+        click.echo("Based on your ingredients, here are some recipes you can try:")
+        for recipe in query:
+            click.echo(f"Recipe: {recipe.name}")
+            click.echo(f"Description: {recipe.description}")
+            click.echo("Ingredients:")
+            for ingredient in recipe.ingredients:
+                click.echo(f"- {ingredient.name}")
+            click.echo("<------------------------->")
+    else:
+        click.echo("No recipes found for the given ingredients.")
+    session.close()
 
 
-class Ingredient(Base):
-    __tablename__ = 'ingredients'
+@cli.command()
+def add_recipe():
+    name = click.prompt("Enter your name")
+    recipe_name = click.prompt("Enter recipe name")
+    recipe_description = click.prompt("Enter recipe description")
+    session = Session()
+    recipe = Recipe(name=recipe_name, description=recipe_description)
+    session.add(recipe)
+    session.commit()
 
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-    quantity = Column(String)
-    recipe_id = Column(Integer, ForeignKey('recipes.id'))
+    click.echo("Enter ingredients for the recipe (comma-separated)")
+    ingredients_input = click.prompt("Ingredients")
+    ingredients_list = [ingredient.strip() for ingredient in ingredients_input.split(",")]
 
-    recipe = relationship("Recipe", backref="recipe_ingredients")
+    for ingredient_name in ingredients_list:
+        ingredient = Ingredient(name=ingredient_name, recipe=recipe)
+        session.add(ingredient)
+    session.commit()
 
-    def __repr__(self):
-        return f'Ingredient: {self.name}'
+    click.echo("Recipe and ingredients added successfully.")
+    session.close()
 
+if __name__ == "__main__":
+    exit_counter = 0
+    while exit_counter < 2:
+        cli()
+        exit_counter += 1
+    click.echo("Exiting the program...")
 
-class Recipe(Base):
-    __tablename__ = 'recipes'
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-    description = Column(String)
-    recipe_ingredients = relationship('Ingredient', backref='recipe')
-
-    def __init__(self, name, description):
-        self.name = name
-        self.description = description
-
-# Create the database engine
-engine = create_engine('sqlite:///recipes.db', echo=True)
-
-# Create a session factory
-Session = sessionmaker(bind=engine)
-session = Session()
-
-# Create the base class for declarative models
-Base.metadata.create_all(engine)
+    exit_counter = 0
