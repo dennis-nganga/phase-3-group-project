@@ -12,9 +12,6 @@ def cli():
     pass
 
 @cli.command()
-def greet():
-    name = click.prompt("Enter your name")
-    click.echo(f"Hello, {name}!")
 
 @cli.command()
 def enter_ingredients():
