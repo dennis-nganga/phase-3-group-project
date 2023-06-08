@@ -1,68 +1,48 @@
 import click
-import warnings
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from database import Session
-from models import Recipe, Ingredient
+from models import Base, Recipe, Ingredient
 
-# Suppress the warning
-warnings.filterwarnings("ignore", category=DeprecationWarning)
+# Connect to the SQLite database file
+engine = create_engine('sqlite:///recipes.db')
+Base.metadata.bind = engine
+DBSession = sessionmaker(bind=engine)
+session = DBSession()
+
+# Create the necessary tables if they don't exist
+Base.metadata.create_all(engine)
 
 @click.group()
 def cli():
     pass
 
-@cli.command()
-def enter_ingredients():
-    name = click.prompt("Enter your name")
-    ingredients_input = click.prompt("Enter ingredients (comma-separated)")
-    ingredients_list = [ingredient.strip() for ingredient in ingredients_input.split(",")]
-    generate_recipes(name, ingredients_list)
-
-def generate_recipes(name, ingredients):
-    session = Session()
-    query = session.query(Recipe).join(Ingredient).filter(Ingredient.name.in_(ingredients)).all()
-    if query:
-        click.echo(f"Hello, {name}!")
-        click.echo("Based on your ingredients, here are some recipes you can try:")
-        for recipe in query:
-            click.echo(f"Recipe: {recipe.name}")
-            click.echo(f"Description: {recipe.description}")
-            click.echo("Ingredients:")
-            for ingredient in recipe.ingredients:
-                click.echo(f"- {ingredient.name}")
-            click.echo("<------------------------->")
-    else:
-        click.echo("No recipes found for the given ingredients.")
-    session.close()
-
-
-@cli.command()
-def add_recipe():
-    name = click.prompt("Enter your name")
-    recipe_name = click.prompt("Enter recipe name")
-    recipe_description = click.prompt("Enter recipe description")
-    session = Session()
-    recipe = Recipe(name=recipe_name, description=recipe_description)
+@click.command()
+@click.option('--name', prompt='Enter your name:')
+@click.option('--description', prompt='Enter recipe description:')
+def add_recipe(name, description):
+    recipe = Recipe(name=name, description=description)
     session.add(recipe)
     session.commit()
+    click.echo(f"Recipe '{recipe.name}' added successfully!")
 
-    click.echo("Enter ingredients for the recipe (comma-separated)")
-    ingredients_input = click.prompt("Ingredients")
-    ingredients_list = [ingredient.strip() for ingredient in ingredients_input.split(",")]
+@click.command()
+def enter_ingredients():
+    name = input('Enter your name: ')
+    ingredients = input('Enter ingredients (comma-separated): ').split(',')
 
-    for ingredient_name in ingredients_list:
-        ingredient = Ingredient(name=ingredient_name, recipe=recipe)
-        session.add(ingredient)
-    session.commit()
+    # Query the database for recipes matching the entered ingredients
+    query = session.query(Recipe).join(Ingredient).filter(Ingredient.name.in_(ingredients)).all()
 
-    click.echo("Recipe and ingredients added successfully.")
-    session.close()
+    if query:
+        click.echo("Recipes found:")
+        for recipe in query:
+            click.echo(f"- Recipe: {recipe.name}")
+            click.echo(f"  Description: {recipe.description}")
+    else:
+        click.echo("No recipes found.")
 
-if __name__ == "__main__":
-    exit_counter = 0
-    while exit_counter < 2:
-        cli()
-        exit_counter += 1
-    click.echo("Exiting the program...")
+cli.add_command(add_recipe)
+cli.add_command(enter_ingredients)
 
-    exit_counter = 0
+if __name__ == '__main__':
+    cli()
