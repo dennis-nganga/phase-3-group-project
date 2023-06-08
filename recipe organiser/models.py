@@ -45,3 +45,17 @@ class HealthFact:
             print(meal.name)
         self.session.close()
 
+
+class Ingredient(Base):
+    __tablename__ = 'ingredients'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    quantity = Column(String)
+    recipe_id = Column(Integer, ForeignKey('recipes.id'))
+    
+    recipe = relationship("Recipe", backref="ingredients")
+
+    def __repr__(self):
+        return f'Ingredient: {self.name}'
+
