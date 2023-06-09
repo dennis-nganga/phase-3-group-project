@@ -52,9 +52,9 @@ Contributions to the Recipe Management System are welcome! If you find any issue
 This project is licensed under the MIT License.
 
 ## Acknowledgments
-1. SQLAlchemy - Python SQL toolkit and ORM.
-2. SQLite - Self-contained, serverless database engine.
-
+1. SQLAlchemy - Python SQL toolkit and ORM that provides a powerful and flexible way to interact with databases.
+2. SQLite - A self-contained, serverless database engine that is widely used for embedded systems and small-scale applications.
+3. Click - A Python package that provides a simple and intuitive command-line interface creation utility, used in this code for creating CLI commands and options
 
 
 
