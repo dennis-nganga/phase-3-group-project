@@ -16,7 +16,7 @@ Base.metadata.create_all(engine)
 def cli():
     pass
 
-@click.command()
+@click.command(name='1', help='Add a recipe')
 @click.option('--name', prompt='Enter recipe name:')
 @click.option('--description', prompt='Enter recipe description:')
 @click.option('--ingredients', prompt='Enter ingredients (comma-separated):')
@@ -29,7 +29,18 @@ def add_recipe(name, description, ingredients, instructions):
     session.commit()
     click.echo(f"Recipe '{recipe.name}' added successfully!")
 
-@click.command()
+@click.command(name='2', help='Delete a recipe')
+@click.option('--recipe-id', prompt='Enter recipe ID to delete:')
+def delete_recipe(recipe_id):
+    recipe = session.query(Recipe).get(recipe_id)
+    if recipe:
+        session.delete(recipe)
+        session.commit()
+        click.echo(f"Recipe '{recipe.name}' deleted successfully!")
+    else:
+        click.echo("Recipe not found.")
+
+@click.command(name='3', help='Enter ingredients')
 @click.option('--name', prompt='Enter your name:')
 @click.option('--ingredients', prompt='Enter ingredients (comma-separated):')
 def enter_ingredients(name, ingredients):
@@ -46,21 +57,23 @@ def enter_ingredients(name, ingredients):
     else:
         click.echo("No recipes found.")
 
-@click.command()
-@click.option('--name', prompt='Enter recipe name:')
-def delete_recipe(name):
-    recipe = session.query(Recipe).filter_by(name=name).first()
-    if recipe:
-        session.delete(recipe)
-        session.commit()
-        click.echo(f"Recipe '{name}' deleted successfully!")
-    else:
-        click.echo(f"Recipe '{name}' not found.")
-
 cli.add_command(add_recipe)
-cli.add_command(enter_ingredients)
 cli.add_command(delete_recipe)
+cli.add_command(enter_ingredients)
 
 if __name__ == '__main__':
-    cli()
+    while True:
+        click.echo("Select a command:")
+        click.echo("1. Add a recipe")
+        click.echo("2. Delete a recipe")
+        click.echo("3. Enter ingredients")
+        command = click.prompt("Enter command number (or 'q' to quit)")
+
+        if command == 'q':
+            break
+
+        try:
+            cli.commands[command]()
+        except KeyError:
+            click.echo("Invalid command. Please select a valid command number.")
 
